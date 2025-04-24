@@ -1,0 +1,35 @@
+.clock {
+  padding: 0.85rem 1.4rem;
+  background: var(--color-panel);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(20px);
+  transition: all 0.3s ease;
+}
+
+.clock:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 15px rgba(109, 90, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.time {
+  font-family: var(--font-family-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-text);
+  letter-spacing: 0.5px;
+  position: relative;
+}
+
+.time-segment {
+  color: var(--color-accent-light);
+  font-weight: 600;
+}
+
+.time-ampm {
+  margin-left: 0.35rem;
+  font-size: 0.85em;
+  opacity: 0.8;
+} 
