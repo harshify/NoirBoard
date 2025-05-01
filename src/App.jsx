@@ -7,39 +7,49 @@ import ExpenseTracker from './components/ExpenseTracker/ExpenseTracker'
 import Weather from './components/Weather/Weather'
 import DailyRoutine from './components/DailyRoutine/DailyRoutine'
 import FutureEvents from './components/FutureEvents/FutureEvents'
+import { getStorageItem, setStorageItem } from './utils/storage'
 
 function App() {
   // State to track remaining expenses
-  const [remainingAmount, setRemainingAmount] = useState(() => {
-    // Get initial remaining amount from localStorage if available
-    const budget = localStorage.getItem('budget') ? parseFloat(localStorage.getItem('budget')) : 50000;
-    const expenses = localStorage.getItem('expenses') ? JSON.parse(localStorage.getItem('expenses')) : [];
-    const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    return budget - totalSpent;
-  });
+  const [remainingAmount, setRemainingAmount] = useState(0);
+  const [totalBudget, setTotalBudget] = useState(50000);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // State to track total budget for percentage calculations
-  const [totalBudget, setTotalBudget] = useState(() => {
-    return localStorage.getItem('budget') ? parseFloat(localStorage.getItem('budget')) : 50000;
-  });
-
-  // Listen for changes in localStorage and update the remaining amount
+  // Initialize data from storage
   useEffect(() => {
-    const handleStorageChange = () => {
-      const budget = localStorage.getItem('budget') ? parseFloat(localStorage.getItem('budget')) : 50000;
+    const initializeData = async () => {
+      // Get initial remaining amount from storage if available
+      const budget = await getStorageItem('budget', 50000);
+      const expenses = await getStorageItem('expenses', []);
+      
+      setTotalBudget(budget);
+      const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      setRemainingAmount(budget - totalSpent);
+      setIsLoading(false);
+    };
+
+    initializeData();
+  }, []);
+
+  // Listen for changes in storage and update the remaining amount
+  useEffect(() => {
+    if (isLoading) return;
+
+    const checkStorageChanges = async () => {
+      const budget = await getStorageItem('budget', 50000);
       setTotalBudget(budget);
       
-      const expenses = localStorage.getItem('expenses') ? JSON.parse(localStorage.getItem('expenses')) : [];
+      const expenses = await getStorageItem('expenses', []);
       const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
       setRemainingAmount(budget - totalSpent);
     };
 
-    // Set up interval to check for changes every second
-    const interval = setInterval(handleStorageChange, 1000);
+    // Set up interval to check for changes
+    const interval = setInterval(checkStorageChanges, 1000);
 
     // Clean up interval on unmount
     return () => clearInterval(interval);
-  }, []);
+  }, [isLoading]);
 
   // Format currency display
   const formatCurrency = (amount) => {
@@ -104,6 +114,15 @@ function App() {
     };
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="app-container loading">
+        <div className="loading-spinner"></div>
+        <p>Loading NoirBoard...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <div className="floating-particles"></div>
@@ -156,7 +175,7 @@ function App() {
       </main>
       
       <footer className="footer">
-        <p>© {new Date().getFullYear()} NoirBoard | harshify</p>
+        <p>© {new Date().getFullYear()} NoirBoard | <a href="https://github.com/harshify" target="_blank" rel="noopener noreferrer">harshify</a></p>
       </footer>
     </div>
   )

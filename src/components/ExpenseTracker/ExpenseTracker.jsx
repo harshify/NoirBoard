@@ -1,32 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import './ExpenseTracker.css';
+import { getStorageItem, setStorageItem } from '../../utils/storage';
 
 const ExpenseTracker = () => {
-  const [expenses, setExpenses] = useState(() => {
-    const saved = localStorage.getItem('expenses');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [expenses, setExpenses] = useState([]);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
-  const [budget, setBudget] = useState(() => {
-    const saved = localStorage.getItem('budget');
-    return saved ? parseFloat(saved) : 50000; // Default 50,000 INR
-  });
+  const [budget, setBudget] = useState(50000); // starting with 50k
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [newBudget, setNewBudget] = useState(budget);
+  const [isLoading, setIsLoading] = useState(true);
 
   const categories = ['Food', 'Transport', 'Entertainment', 'Bills', 'Shopping', 'Other'];
 
-  // Save expenses to localStorage
+  // load stuff when page loads
   useEffect(() => {
-    localStorage.setItem('expenses', JSON.stringify(expenses));
-  }, [expenses]);
+    const loadData = async () => {
+      const savedExpenses = await getStorageItem('expenses', []);
+      const savedBudget = await getStorageItem('budget', 50000);
+      
+      setExpenses(savedExpenses);
+      setBudget(savedBudget);
+      setNewBudget(savedBudget);
+      setIsLoading(false);
+    };
+    
+    loadData();
+  }, []);
 
-  // Save budget to localStorage
+  // save expenses when they change
   useEffect(() => {
-    localStorage.setItem('budget', budget.toString());
-  }, [budget]);
+    if (isLoading) return;
+    setStorageItem('expenses', expenses);
+  }, [expenses, isLoading]);
+
+  // save budget when it changes
+  useEffect(() => {
+    if (isLoading) return;
+    setStorageItem('budget', budget);
+  }, [budget, isLoading]);
 
   const addExpense = (e) => {
     e.preventDefault();
@@ -61,13 +74,13 @@ const ExpenseTracker = () => {
     setIsEditingBudget(false);
   };
 
-  // Calculate total spent
+  // calculate how much spent
   const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   
-  // Calculate remaining budget
+  // money left
   const remaining = budget - totalSpent;
 
-  // Calculate category totals
+  // figure out category totals
   const categoryTotals = {};
   expenses.forEach(expense => {
     if (!categoryTotals[expense.category]) {
@@ -76,15 +89,15 @@ const ExpenseTracker = () => {
     categoryTotals[expense.category] += expense.amount;
   });
 
-  // Sort categories by total amount
+  // top 3 categories
   const topCategories = Object.entries(categoryTotals)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
 
-  // Get recent expenses (last 3)
+  // last 3 expenses
   const recentExpenses = expenses.slice(0, 3);
 
-  // Format currency
+  // make money look nice
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -99,7 +112,6 @@ const ExpenseTracker = () => {
       
       <div className="expense-content">
         <div className="expense-summary-panel">
-          {/* Budget Overview */}
           <div className="budget-overview">
             <div className="budget-header">
               <span>Budget Overview</span>
@@ -149,7 +161,6 @@ const ExpenseTracker = () => {
             )}
           </div>
 
-          {/* Expense Form */}
           <div className="expense-form-wrapper">
             <form className="expense-form" onSubmit={addExpense}>
               <div className="form-group">
@@ -189,7 +200,6 @@ const ExpenseTracker = () => {
         </div>
 
         <div className="expense-data-panels">
-          {/* Recent Expenses */}
           <div className="recent-expenses">
             <h3>Recent Expenses</h3>
             <div className="expense-items">
@@ -217,7 +227,6 @@ const ExpenseTracker = () => {
             </div>
           </div>
 
-          {/* Category Breakdown */}
           <div className="expense-breakdown">
             <h3>Top Categories</h3>
             <div className="category-items">
